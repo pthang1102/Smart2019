@@ -475,7 +475,7 @@ void goTillBlack(int speed);
     }
 #endif
 
-#if 0
+#if 1
     //Week 4 - Assignment 3
     void goTillBlack(int speed);
     void reachEndOfLine(int speed);
@@ -493,26 +493,25 @@ void goTillBlack(int speed);
     
     
     //start button loop
-    for (;;)
-    {
-        if (SW1_Read() == 0) {break;} // user button
-    }
-    //vTaskDelay(500); //pause after activation
-    // start motor, move forward untill the line
+    vTaskDelay(2000);
     motor_start();
    
 
     reflectance_start();
     reflectance_set_threshold(9000, 9000, 9000, 9000, 9000, 9000); // set center sensor threshold 9000 nm    
-    
-    goTillBlack(speed);
-    
-    goTillBlack(speed);
-    
-    goTillBlack(speed);
-    
-    goTillBlack(speed);
-    
+    for (;;) 
+    {
+         struct sensors_ dig;
+        reflectance_digital(&dig);
+        if (dig.l3 == 1 && dig.l2 == 1 && dig.l1 == 1 && dig.r1 == 1 && dig.r2 == 1 && dig.r3 == 1){
+            motor_forward(0,0);
+            vTaskDelay(2000);
+            break;
+        } 
+        motor_forward(10*speed, 50);
+    }
+    vTaskDelay(3000);
+    reachEndOfLine(speed);
     goTillBlack(speed);
     
     motor_forward(0,0);
@@ -529,37 +528,38 @@ void goTillBlack(int speed);
         reflectance_read(&ref);
         reflectance_digital(&dig);  //read reflectance sensor data in digital form
         //condition for seeing the black line with all of the reflectance sensors
-        if (dig.l3 == 1 && dig.l2 == 1 && dig.l1 == 1 && dig.r1 == 1 && dig.r2 == 1 && dig.r3){
-            motor_forward(0, 0);
+        if (dig.l2 == 1 && dig.l1 == 1 && dig.r1 == 1 && dig.r2 == 1){
+            motor_forward(0,0);
             vTaskDelay(2000);
             break;
-        }
+        } else {
         printf("Ref: %8d %8d %8d %8d %8d %8d\n", ref.l3, ref.l2, ref.l1, ref.r1, ref.r2, ref.r3); 
-        while (ref.r1>8000 && ref.l1>8000) {   //for a thin line go down to 8000 maybe less
+        while (ref.r1>8000 && ref.l1>8000 && ref.l2 < 3000 && ref.r2 < 3000) {   //for a thin line go down to 8000 maybe less
         		motor_forward(10*speed, 50);
                 reflectance_read(&ref);
                 reflectance_digital(&dig);
         	}
-        while (ref.l2>8000) {  //for a thin line put less for all
+        if (ref.l2>8000) {  //for a thin line put less for all
 		motor_turn(0, 100, 20);
         reflectance_read(&ref);
                 reflectance_digital(&dig);
 	        }
-        while (ref.r2>8000) {
+        else if (ref.r2>8000) {
         		motor_turn(100, 20, 20);
                 reflectance_read(&ref);
                 reflectance_digital(&dig);
         	}
-        while (ref.r1>8000 && ref.l1<8000) {
+        else if (ref.r1>8000 && ref.l1<8000) {
         		motor_turn(100, 20, 1);
                 reflectance_read(&ref);
                 reflectance_digital(&dig);
         	}
-        while (ref.l1>8000 && ref.r1<8000) {
+        else if (ref.l1>8000 && ref.r1<8000) {
         		motor_turn(20, 100, 20);
                 reflectance_read(&ref);
                 reflectance_digital(&dig);
         	}
+        }
         
         }
     
